@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Editor</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://kit.fontawesome.com/cfdca8780e.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="theme-switch">
+        <button id="theme-toggle">
+            <i class="fa-solid fa-sun"></i>
+        </button>
+    </div>
+    <div class="container">
+        <div class="left">
+            <label><i class="fa-brands fa-html5"></i>HTML</label>
+            <textarea id="html-code" onkeyup="run()"></textarea>
+
+            <label><i class="fa-brands fa-css3-alt"></i>CSS</label>
+            <textarea id="css-code" onkeyup="run()"></textarea>
+
+            <label><i class="fa-brands fa-js"></i>JavaScript</label>
+            <textarea id="js-code" onkeyup="run()"></textarea>
+        </div>
+        <div class="right">
+            <label><i class="fa-solid fa-play"></i>Output</label>
+            <iframe id="output"></iframe>
+        </div>
+    </div>
+
+    <div class="save-status-container">
+        <div class="save-indicator">
+            <i class="fa-solid fa-circle"></i>
+            <span class="save-text">Changes saved</span>
+        </div>
+        <div class="auto-save-toggle">
+            <label class="switch">
+                <input type="checkbox" id="autoSaveToggle" checked>
+                <span class="slider"></span>
+            </label>
+            <span>Auto-save</span>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-section">
+            <button class="nav-button html-snippets">
+                <i class="fa-brands fa-html5"></i>
+                <span>HTML</span>
+                <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <button class="nav-button css-snippets">
+                <i class="fa-brands fa-css3-alt"></i>
+                <span>CSS</span>
+                <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <button class="nav-button js-snippets">
+                <i class="fa-brands fa-js"></i>
+                <span>JS</span>
+                <i class="fa-solid fa-chevron-down"></i>
+            </button>
+        </div>
+        
+        <!-- Snippet Dropdowns -->
+        <div class="snippet-dropdown html-dropdown">
+            <div class="snippet-item" data-type="html" data-name="boilerplate">
+                <i class="fa-solid fa-file-code"></i>
+                HTML Boilerplate
+            </div>
+            <div class="snippet-item" data-type="html" data-name="form">
+                <i class="fa-solid fa-square-check"></i>
+                Form Template
+            </div>
+            <div class="snippet-item" data-type="html" data-name="navbar">
+                <i class="fa-solid fa-bars"></i>
+                Navigation Bar
+            </div>
+        </div>
+
+        <div class="snippet-dropdown css-dropdown">
+            <div class="snippet-item" data-type="css" data-name="reset">
+                <i class="fa-solid fa-wand-magic"></i>
+                CSS Reset
+            </div>
+            <div class="snippet-item" data-type="css" data-name="flexbox">
+                <i class="fa-solid fa-table-columns"></i>
+                Flexbox Layout
+            </div>
+            <div class="snippet-item" data-type="css" data-name="grid">
+                <i class="fa-solid fa-grid-2"></i>
+                Grid Layout
+            </div>
+        </div>
+
+        <div class="snippet-dropdown js-dropdown">
+            <div class="snippet-item" data-type="js" data-name="fetch">
+                <i class="fa-solid fa-download"></i>
+                Fetch API
+            </div>
+            <div class="snippet-item" data-type="js" data-name="dom">
+                <i class="fa-solid fa-code"></i>
+                DOM Manipulation
+            </div>
+            <div class="snippet-item" data-type="js" data-name="event">
+                <i class="fa-solid fa-bolt"></i>
+                Event Listeners
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function run(){
+            let htmlCode = document.getElementById("html-code").value;
+    let cssCode = document.getElementById("css-code").value;
+    let jsCode = document.getElementById("js-code").value;
+    let output = document.getElementById("output").contentDocument;
+
+    output.open();
+    output.write(`
+        <html>
+        <head>
+            <style>${cssCode}</style>
+        </head>
+        <body>
+            ${htmlCode}
+            <script>
+                ${jsCode}
+            <\/script>
+        </body>
+        </html>
+    `);
+    output.close();
+}
+
+        // Theme Toggle Functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        const toggleIcon = themeToggle.querySelector('i');
+
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        html.dataset.theme = savedTheme;
+        updateToggleIcon(savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const newTheme = html.dataset.theme === 'light' ? 'dark' : 'light';
+            html.dataset.theme = newTheme;
+            localStorage.setItem('theme', newTheme);
+            updateToggleIcon(newTheme);
+        });
+
+        function updateToggleIcon(theme) {
+            toggleIcon.className = theme === 'light' 
+                ? 'fa-solid fa-moon' 
+                : 'fa-solid fa-sun';
+        }
+
+        // Auto-save functionality
+        const saveIndicator = document.querySelector('.save-indicator');
+        const saveText = document.querySelector('.save-text');
+        const autoSaveToggle = document.getElementById('autoSaveToggle');
+        let saveTimeout;
+        let lastSave = Date.now();
+
+        // Load auto-save preference
+        autoSaveToggle.checked = localStorage.getItem('autoSave') !== 'false';
+
+        // Auto-save toggle handler
+        autoSaveToggle.addEventListener('change', (e) => {
+            localStorage.setItem('autoSave', e.target.checked);
+            if (e.target.checked) {
+                saveText.textContent = 'Changes saved';
+            } else {
+                saveText.textContent = 'Auto-save off';
+            }
+        });
+
+        function saveChanges() {
+            if (!autoSaveToggle.checked) return;
+            
+            clearTimeout(saveTimeout);
+            
+            saveIndicator.classList.add('saving');
+            saveIndicator.classList.remove('saved');
+            saveText.textContent = 'Saving changes...';
+            
+            saveTimeout = setTimeout(() => {
+                localStorage.setItem('html-code', document.getElementById('html-code').value);
+                localStorage.setItem('css-code', document.getElementById('css-code').value);
+                localStorage.setItem('js-code', document.getElementById('js-code').value);
+                
+                saveIndicator.classList.remove('saving');
+                saveIndicator.classList.add('saved');
+                saveText.textContent = 'Changes saved';
+                lastSave = Date.now();
+                
+                setTimeout(() => {
+                    saveIndicator.classList.remove('saved');
+                }, 2000);
+            }, 1000);
+        }
+
+        // Add auto-save to textareas
+        document.querySelectorAll('textarea').forEach(textarea => {
+            textarea.addEventListener('input', () => {
+                if (Date.now() - lastSave > 1000) {
+                    saveChanges();
+                }
+            });
+        });
+
+        // Load saved code on page load
+        window.addEventListener('load', () => {
+            if (localStorage.getItem('html-code')) {
+                document.getElementById('html-code').value = localStorage.getItem('html-code');
+            }
+            if (localStorage.getItem('css-code')) {
+                document.getElementById('css-code').value = localStorage.getItem('css-code');
+            }
+            if (localStorage.getItem('js-code')) {
+                document.getElementById('js-code').value = localStorage.getItem('js-code');
+            }
+            run();
+        });
+
+        // Add keyboard shortcut for manual save
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveChanges();
+            }
+        });
+
+        // Code snippets data
+        const codeSnippets = {
+            html: {
+                boilerplate: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    
+</body>
+</html>`,
+                form: `<form class="form">
+    <div class="form-group">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+    </div>
+    <div class="form-group">
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+    </div>
+    <button type="submit">Submit</button>
+</form>`,
+                navbar: `<nav class="navbar">
+    <div class="logo">Logo</div>
+    <ul class="nav-links">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact">Contact</a></li>
+    </ul>
+</nav>`
+            },
+            css: {
+                reset: `* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}`,
+                flexbox: `.flex-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}`,
+                grid: `.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}`
+            },
+            js: {
+                fetch: `async function fetchData(url) {
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}`,
+                dom: `function createElement(tag, className, text) {
+    const element = document.createElement(tag);
+    element.className = className;
+    element.textContent = text;
+    return element;
+}`,
+                event: `document.addEventListener('DOMContentLoaded', () => {
+    // Your code here
+});
+
+element.addEventListener('click', (e) => {
+    e.preventDefault();
+    // Handle click event
+});`
+            }
+        };
+
+        // Dropdown functionality
+        const dropdownButtons = document.querySelectorAll('.nav-button');
+        const dropdowns = document.querySelectorAll('.snippet-dropdown');
+
+        dropdownButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const type = button.className.split(' ')[1].split('-')[0];
+                const dropdown = document.querySelector(`.${type}-dropdown`);
+                
+                // Close other dropdowns
+                dropdowns.forEach(d => {
+                    if (d !== dropdown) d.classList.remove('active');
+                });
+                
+                dropdown.classList.toggle('active');
+                e.stopPropagation();
+            });
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', () => {
+            dropdowns.forEach(dropdown => dropdown.classList.remove('active'));
+        });
+
+        // Snippet insertion
+        document.querySelectorAll('.snippet-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const type = item.dataset.type;
+                const name = item.dataset.name;
+                const code = codeSnippets[type][name];
+                const textarea = document.getElementById(`${type}-code`);
+                
+                // Insert at cursor position or append
+                const cursorPos = textarea.selectionStart;
+                const textBefore = textarea.value.substring(0, cursorPos);
+                const textAfter = textarea.value.substring(cursorPos);
+                
+                textarea.value = textBefore + code + textAfter;
+                
+                // Close dropdown
+                dropdowns.forEach(dropdown => dropdown.classList.remove('active'));
+                
+                // Run and save
+                run();
+                saveChanges();
+            });
+        });
+    </script>
+    
+</body>
+</html>
